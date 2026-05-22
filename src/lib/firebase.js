@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
+import { getDatabase } from "firebase/database";
 
 // Firebase configuration (provided by user)
 const firebaseConfig = {
@@ -15,7 +15,7 @@ const firebaseConfig = {
 
 // Initialize Firebase app
 const app = initializeApp(firebaseConfig);
-// Firestore instance (used by sync actions)
-const db = getFirestore(app);
+// Realtime Database instance (used by sync actions)
+const db = getDatabase(app);
 
 export { app, db, firebaseConfig };

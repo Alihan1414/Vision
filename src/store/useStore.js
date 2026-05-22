@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { ref, set, get, child } from 'firebase/database';
 import { db } from '@/lib/firebase';
 
 export const useStore = create(
@@ -198,7 +198,7 @@ export const useStore = create(
         }
         try {
           const currentState = useStore.getState();
-          await setDoc(doc(db, 'users', 'vision_os_user'), currentState);
+          await set(ref(db, 'users/vision_os_user'), currentState);
           return { success: true };
         } catch (error) {
           console.error('Failed to sync to cloud:', error);
@@ -212,9 +212,10 @@ export const useStore = create(
           return { success: false, error: 'Firebase config missing' };
         }
         try {
-          const snap = await getDoc(doc(db, 'users', 'vision_os_user'));
+          const dbRef = ref(db);
+          const snap = await get(child(dbRef, 'users/vision_os_user'));
           if (snap.exists()) {
-            useStore.setState(snap.data());
+            useStore.setState(snap.val());
             return { success: true };
           }
           return { success: false, error: 'No cloud data found' };
