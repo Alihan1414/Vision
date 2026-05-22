@@ -1,26 +1,21 @@
-import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore';
+import { initializeApp } from "firebase/app";
+import { getFirestore } from "firebase/firestore";
 
+// Firebase configuration (provided by user)
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
+  apiKey: "AIzaSyCH7bTzvqJqSzJiV0Ou6JudPovkrrWrwdw",
+  authDomain: "vision-b1ad5.firebaseapp.com",
+  databaseURL: "https://vision-b1ad5-default-rtdb.firebaseio.com",
+  projectId: "vision-b1ad5",
+  storageBucket: "vision-b1ad5.firebasestorage.app",
+  messagingSenderId: "121963731187",
+  appId: "1:121963731187:web:b79298734352c2d452bf86",
+  measurementId: "G-32J8MVDDQT"
 };
 
-let app;
-let db = null;
+// Initialize Firebase app
+const app = initializeApp(firebaseConfig);
+// Firestore instance (used by sync actions)
+const db = getFirestore(app);
 
-// Only initialize if we have the config
-if (firebaseConfig.projectId) {
-  try {
-    app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-    db = getFirestore(app);
-  } catch (error) {
-    console.error("Firebase initialization error", error);
-  }
-}
-
-export { app, db };
+export { app, db, firebaseConfig };
