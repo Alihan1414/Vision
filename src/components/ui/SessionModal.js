@@ -144,7 +144,7 @@ export function SessionModal({ isOpen, onClose, type, level, onComplete }) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, x: -50 }}
-            className="bg-zinc-900 border border-white/10 p-8 rounded-3xl w-full max-w-2xl relative shadow-2xl"
+            className="bg-zinc-900 border border-white/10 p-8 rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto relative shadow-2xl"
           >
             <button onClick={onClose} className="absolute top-6 right-6 text-zinc-500 hover:text-white">
               <X size={24} />
