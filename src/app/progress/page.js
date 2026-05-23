@@ -6,11 +6,18 @@ import { ProgressBar } from '@/components/ui/ProgressBar';
 import { motion } from 'framer-motion';
 import { 
   Trophy, TrendingUp, Target, Flame, Check, 
-  BookOpen, Sparkles, Award, Zap, Activity
+  BookOpen, Sparkles, Award, Zap, Activity,
+  PieChart as PieIcon, LineChart as LineIcon
 } from 'lucide-react';
+import { 
+  ResponsiveContainer, LineChart, Line, XAxis, YAxis, 
+  Tooltip, CartesianGrid, PieChart, Pie, Cell 
+} from 'recharts';
+
+const PIE_COLORS = ['#3b82f6', '#b026ff', '#10b981', '#f59e0b', '#f43f5e', '#6b7280'];
 
 export default function Progress() {
-  const { user, progress, tasks, namaz, stats, books, goals } = useStore();
+  const { user, progress, tasks, namaz, stats, books, goals, finance } = useStore();
 
   // Calculate Today's Activity Score dynamically
   const completedTasksCount = tasks.filter(t => t.completed).length;
@@ -52,6 +59,27 @@ export default function Progress() {
     if (score <= 7) return 'bg-emerald-600/50 border-emerald-500/30 text-emerald-200';
     return 'bg-emerald-400/70 border-emerald-300/40 text-black shadow-[0_0_10px_rgba(52,211,153,0.3)]';
   };
+
+  // Recharts: Weekly XP Progress Chart Data
+  const xpChartData = [
+    { name: 'Pzt', XP: Math.max(0, user.xp - 500) },
+    { name: 'Sal', XP: Math.max(0, user.xp - 420) },
+    { name: 'Çar', XP: Math.max(0, user.xp - 300) },
+    { name: 'Per', XP: Math.max(0, user.xp - 180) },
+    { name: 'Cum', XP: Math.max(0, user.xp - 100) },
+    { name: 'Cmt', XP: user.xp }
+  ];
+
+  // Recharts: Expense Category Breakdown Chart Data
+  const categoryTotals = finance?.transactions?.reduce((acc, t) => {
+    acc[t.category] = (acc[t.category] || 0) + Number(t.amount);
+    return acc;
+  }, {}) || {};
+
+  const financeChartData = Object.keys(categoryTotals).map((cat) => ({
+    name: cat,
+    value: categoryTotals[cat]
+  }));
 
   const achievements = [
     { id: 1, title: 'İlk Adım', desc: 'Sistemi kurdun ve hesabını başlattın.', completed: true },
@@ -132,7 +160,7 @@ export default function Progress() {
       {/* Grid Content */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
-        {/* SOL: Skill Trees & Stats (2/3) */}
+        {/* SOL: Skill Trees & Charts (2/3) */}
         <div className="lg:col-span-2 flex flex-col gap-8">
           
           {/* Skill Trees */}
@@ -149,11 +177,80 @@ export default function Progress() {
             </div>
           </GlassCard>
 
+          {/* Charts Row */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            {/* Chart 1: XP Progress */}
+            <GlassCard delay={0.25} className="flex flex-col h-[280px]">
+              <h3 className="text-sm font-bold text-zinc-300 mb-4 flex items-center gap-1.5">
+                <LineIcon className="text-neon-purple w-4 h-4" /> Haftalık XP Artışı
+              </h3>
+              <div className="flex-1 w-full text-xs">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={xpChartData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                    <XAxis dataKey="name" stroke="#71717a" />
+                    <YAxis stroke="#71717a" />
+                    <Tooltip 
+                      contentStyle={{ backgroundColor: 'rgba(10, 10, 10, 0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff' }}
+                    />
+                    <Line type="monotone" dataKey="XP" stroke="#b026ff" strokeWidth={2.5} activeDot={{ r: 6 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </GlassCard>
+
+            {/* Chart 2: Expense Breakdown */}
+            <GlassCard delay={0.3} className="flex flex-col h-[280px]">
+              <h3 className="text-sm font-bold text-zinc-300 mb-4 flex items-center gap-1.5">
+                <PieIcon className="text-rose-400 w-4 h-4" /> Harcama Dağılımı (Kategori)
+              </h3>
+              <div className="flex-1 w-full relative flex items-center justify-center">
+                {financeChartData.length === 0 ? (
+                  <span className="text-xs text-zinc-500 italic">Analiz için harcama girilmelidir.</span>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={financeChartData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={80}
+                        paddingAngle={5}
+                        dataKey="value"
+                      >
+                        {financeChartData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{ backgroundColor: 'rgba(10, 10, 10, 0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff' }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                )}
+                {/* Custom Legend overlay inside GlassCard */}
+                {financeChartData.length > 0 && (
+                  <div className="absolute bottom-2 left-2 flex flex-wrap gap-x-2 gap-y-0.5 max-w-full overflow-hidden text-[9px] text-zinc-400">
+                    {financeChartData.slice(0, 3).map((item, idx) => (
+                      <span key={idx} className="flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: PIE_COLORS[idx % PIE_COLORS.length] }} />
+                        {item.name}: {item.value}₺
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </GlassCard>
+
+          </div>
+
           {/* Quick Metrics */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             
             {/* Level Metric */}
-            <GlassCard delay={0.3} className="flex flex-col justify-between">
+            <GlassCard delay={0.35} className="flex flex-col justify-between">
               <div>
                 <span className="text-xs text-zinc-500 font-medium block">Aktif Seviye</span>
                 <span className="text-4xl font-extrabold text-white mt-1 block">Lv. {user.level}</span>
@@ -171,7 +268,7 @@ export default function Progress() {
             </GlassCard>
 
             {/* Streak Metric */}
-            <GlassCard delay={0.35} className="bg-gradient-to-br from-orange-500/10 to-red-500/10 border-orange-500/20 flex flex-col justify-between">
+            <GlassCard delay={0.4} className="bg-gradient-to-br from-orange-500/10 to-red-500/10 border-orange-500/20 flex flex-col justify-between">
               <div>
                 <span className="text-xs text-zinc-500 font-medium block">Aktif Seri (Streak)</span>
                 <span className="text-4xl font-extrabold text-orange-400 mt-1 block">{user.streak} Gün</span>
@@ -185,7 +282,7 @@ export default function Progress() {
             </GlassCard>
 
             {/* General Highlights */}
-            <GlassCard delay={0.4} className="flex flex-col justify-between">
+            <GlassCard delay={0.45} className="flex flex-col justify-between">
               <div>
                 <span className="text-xs text-zinc-500 font-medium block">Tamamlananlar</span>
                 <div className="space-y-2 mt-3">
@@ -210,7 +307,7 @@ export default function Progress() {
 
         {/* SAĞ: Achievements (1/3) */}
         <div className="flex flex-col gap-6">
-          <GlassCard delay={0.45} className="flex-1 flex flex-col">
+          <GlassCard delay={0.5} className="flex-1 flex flex-col">
             <h2 className="text-xl font-bold mb-6 flex items-center gap-2 text-yellow-400">
               <Trophy className="w-5 h-5 text-yellow-400" /> Başarımlar (Achievements)
             </h2>
