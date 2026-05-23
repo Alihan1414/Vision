@@ -64,6 +64,38 @@ export const useStore = create(
       // Long-term Goals
       goals: [],
 
+      // Water Intake (glasses)
+      waterIntake: 0,
+
+      // Sleep Data
+      sleep: {
+        bedtime: '',
+        wakeTime: '',
+        quality: 'medium',
+      },
+
+      // Finance Data
+      finance: {
+        transactions: [],
+        budget: 0,
+        currency: 'TRY',
+      },
+
+      // Reading Books
+      books: {
+        current: {
+          title: '',
+          page: 0,
+          totalPages: 0,
+        },
+        completed: [],
+      },
+
+      // Vision Board
+      visionBoard: {
+        items: [],
+      },
+
       // Actions
       addVocabulary: (type, words) => set((state) => {
         if (!words || words.length === 0) return state;
@@ -197,7 +229,9 @@ export const useStore = create(
             lastActiveDate: today
           },
           // Reset daily namaz
-          namaz: { sabah: false, ogle: false, ikindi: false, aksam: false, yatsi: false }
+          namaz: { sabah: false, ogle: false, ikindi: false, aksam: false, yatsi: false },
+          // Reset daily water intake
+          waterIntake: 0
         };
       }),
 
@@ -225,6 +259,104 @@ export const useStore = create(
         };
       }),
 
+      addWaterIntake: (amount) => set((state) => ({
+        waterIntake: Math.max(0, state.waterIntake + amount)
+      })),
+
+      updateSleep: (sleepData) => set((state) => ({
+        sleep: { ...state.sleep, ...sleepData }
+      })),
+
+      addTransaction: (transaction) => set((state) => ({
+        finance: {
+          ...state.finance,
+          transactions: [
+            ...state.finance.transactions,
+            { id: Date.now(), date: new Date().toISOString().split('T')[0], ...transaction }
+          ]
+        }
+      })),
+
+      deleteTransaction: (id) => set((state) => ({
+        finance: {
+          ...state.finance,
+          transactions: state.finance.transactions.filter((t) => t.id !== id)
+        }
+      })),
+
+      setBudget: (budget) => set((state) => ({
+        finance: { ...state.finance, budget }
+      })),
+
+      updateCurrentBook: (bookData) => set((state) => ({
+        books: {
+          ...state.books,
+          current: { ...state.books.current, ...bookData }
+        }
+      })),
+
+      completeBook: () => set((state) => {
+        if (!state.books.current.title) return state;
+        const completedBook = {
+          ...state.books.current,
+          completedDate: new Date().toISOString().split('T')[0]
+        };
+        return {
+          books: {
+            current: { title: '', page: 0, totalPages: 0 },
+            completed: [...state.books.completed, completedBook]
+          },
+          user: { ...state.user, xp: state.user.xp + 300 }
+        };
+      }),
+
+      addGoal: (goal) => set((state) => ({
+        goals: [
+          ...state.goals,
+          {
+            id: Date.now(),
+            title: goal.title,
+            deadline: goal.deadline,
+            subGoals: (goal.subGoals || []).map((sg, idx) => ({ id: `${Date.now()}-${idx}`, title: sg.title || sg, completed: false })),
+            progress: 0
+          }
+        ]
+      })),
+
+      toggleSubGoal: (goalId, subGoalId) => set((state) => {
+        const updatedGoals = state.goals.map((g) => {
+          if (g.id !== goalId) return g;
+          const updatedSubGoals = g.subGoals.map((sg) =>
+            sg.id === subGoalId ? { ...sg, completed: !sg.completed } : sg
+          );
+          const completedCount = updatedSubGoals.filter((sg) => sg.completed).length;
+          const progress = updatedSubGoals.length > 0 ? Math.round((completedCount / updatedSubGoals.length) * 100) : 0;
+          return { ...g, subGoals: updatedSubGoals, progress };
+        });
+        return { goals: updatedGoals };
+      }),
+
+      deleteGoal: (id) => set((state) => ({
+        goals: state.goals.filter((g) => g.id !== id)
+      })),
+
+      addVisionItem: (item) => set((state) => ({
+        visionBoard: {
+          ...state.visionBoard,
+          items: [
+            ...(state.visionBoard?.items || []),
+            { id: Date.now(), text: item.text, emoji: item.emoji || '✨', color: item.color || 'from-indigo-500/20 to-purple-600/20' }
+          ]
+        }
+      })),
+
+      deleteVisionItem: (id) => set((state) => ({
+        visionBoard: {
+          ...state.visionBoard,
+          items: (state.visionBoard?.items || []).filter((item) => item.id !== id)
+        }
+      })),
+
       // --- CLOUD SYNC ACTIONS ---
       syncToCloud: async () => {
         try {
@@ -242,8 +374,26 @@ export const useStore = create(
           const result = await loadFromCloud(customBinId);
           if (result.success && result.data) {
             // Only restore plain data fields, not functions
-            const { user, tasks, progress, stats, langLevels, vocabularyHistory, projects, goals, namaz } = result.data;
-            useStore.setState({ user, tasks, progress, stats, langLevels, vocabularyHistory, projects, goals, namaz: namaz || { sabah: false, ogle: false, ikindi: false, aksam: false, yatsi: false } });
+            const { 
+              user, tasks, progress, stats, langLevels, vocabularyHistory, projects, goals, namaz,
+              waterIntake, sleep, finance, books, visionBoard
+            } = result.data;
+            useStore.setState({ 
+              user, 
+              tasks, 
+              progress, 
+              stats, 
+              langLevels, 
+              vocabularyHistory, 
+              projects, 
+              goals, 
+              namaz: namaz || { sabah: false, ogle: false, ikindi: false, aksam: false, yatsi: false },
+              waterIntake: waterIntake || 0,
+              sleep: sleep || { bedtime: '', wakeTime: '', quality: 'medium' },
+              finance: finance || { transactions: [], budget: 0, currency: 'TRY' },
+              books: books || { current: { title: '', page: 0, totalPages: 0 }, completed: [] },
+              visionBoard: visionBoard || { items: [] }
+            });
           }
           return result;
         } catch (error) {
