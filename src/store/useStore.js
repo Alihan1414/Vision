@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { ref, set, get, child } from 'firebase/database';
-import { db } from '@/lib/firebase';
+import { saveToCloud, loadFromCloud, getBinId } from '@/lib/cloudSync';
 
 export const useStore = create(
   persist(
@@ -17,12 +16,22 @@ export const useStore = create(
       // Daily Tasks
       tasks: [],
       
+      // Namaz Tracking
+      namaz: {
+        sabah: false,
+        ogle: false,
+        ikindi: false,
+        aksam: false,
+        yatsi: false,
+      },
+      
       // Progress Stats (0 to 100)
       progress: {
         french: 0,
         english: 0,
         software: 0,
         discipline: 0,
+        spor: 0,
       },
 
       // Analytics & Stats
@@ -186,44 +195,64 @@ export const useStore = create(
             ...state.user,
             streak: diffDays === 1 ? state.user.streak + 1 : 0,
             lastActiveDate: today
-          }
+          },
+          // Reset daily namaz
+          namaz: { sabah: false, ogle: false, ikindi: false, aksam: false, yatsi: false }
+        };
+      }),
+
+      completeSporSession: () => set((state) => {
+        const currentProgress = state.progress.spor || 0;
+        const newProgress = currentProgress + 10;
+
+        if (newProgress >= 100) {
+          return {
+            progress: { ...state.progress, spor: 0 },
+            user: { ...state.user, xp: state.user.xp + 200 }
+          };
+        }
+        return {
+          progress: { ...state.progress, spor: newProgress },
+          user: { ...state.user, xp: state.user.xp + 50 }
+        };
+      }),
+
+      toggleNamaz: (vakit) => set((state) => {
+        const isCompleted = !state.namaz[vakit];
+        return {
+          namaz: { ...state.namaz, [vakit]: isCompleted },
+          user: { ...state.user, xp: state.user.xp + (isCompleted ? 20 : -20) }
         };
       }),
 
       // --- CLOUD SYNC ACTIONS ---
       syncToCloud: async () => {
-        if (!db) {
-          console.warn('Firebase is not initialized. Check your environment variables.');
-          return { success: false, error: 'Firebase config missing' };
-        }
         try {
           const currentState = useStore.getState();
-          await set(ref(db, 'users/vision_os_user'), currentState);
-          return { success: true };
+          const result = await saveToCloud(currentState);
+          return result;
         } catch (error) {
           console.error('Failed to sync to cloud:', error);
           return { success: false, error: error.message };
         }
       },
 
-      loadFromCloud: async () => {
-        if (!db) {
-          console.warn('Firebase is not initialized.');
-          return { success: false, error: 'Firebase config missing' };
-        }
+      loadFromCloud: async (customBinId) => {
         try {
-          const dbRef = ref(db);
-          const snap = await get(child(dbRef, 'users/vision_os_user'));
-          if (snap.exists()) {
-            useStore.setState(snap.val());
-            return { success: true };
+          const result = await loadFromCloud(customBinId);
+          if (result.success && result.data) {
+            // Only restore plain data fields, not functions
+            const { user, tasks, progress, stats, langLevels, vocabularyHistory, projects, goals, namaz } = result.data;
+            useStore.setState({ user, tasks, progress, stats, langLevels, vocabularyHistory, projects, goals, namaz: namaz || { sabah: false, ogle: false, ikindi: false, aksam: false, yatsi: false } });
           }
-          return { success: false, error: 'No cloud data found' };
+          return result;
         } catch (error) {
           console.error('Failed to load from cloud:', error);
           return { success: false, error: error.message };
         }
-      }
+      },
+
+      getBinId: () => getBinId(),
     }),
     {
       name: 'vision-os-v3', // Reset all user data to fresh start

@@ -1,13 +1,29 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useStore } from '@/store/useStore';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { ProgressRing } from '@/components/ui/ProgressRing';
 import { motion } from 'framer-motion';
-import { Target, Flame, Brain, BookOpen, Clock, Activity } from 'lucide-react';
+import { Target, Flame, Brain, BookOpen, Clock, Activity, TrendingUp, History, CheckCircle2, Circle } from 'lucide-react';
 
 export default function Home() {
-  const { user, progress, tasks, stats } = useStore();
+  const { user, progress, tasks, stats, namaz, toggleNamaz } = useStore();
+  const [dailyFacts, setDailyFacts] = useState({ finance: '', history: '' });
+  const [isLoadingFacts, setIsLoadingFacts] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/daily-facts')
+      .then(res => res.json())
+      .then(data => {
+        setDailyFacts(data);
+        setIsLoadingFacts(false);
+      })
+      .catch(err => {
+        console.error(err);
+        setIsLoadingFacts(false);
+      });
+  }, []);
 
   const todayTasks = tasks.filter(t => t.type === 'daily' || !t.type);
   const completedTasks = todayTasks.filter(t => t.completed).length;
@@ -86,6 +102,7 @@ export default function Home() {
               <ProgressRing progress={progress.french} color="neon-blue" label="French" />
               <ProgressRing progress={progress.english} color="neon-purple" label="English" />
               <ProgressRing progress={progress.software} color="neon-green" label="Software" />
+              <ProgressRing progress={progress.spor} color="orange-500" label="Spor" />
               <ProgressRing progress={progress.discipline} color="white" label="Discipline" />
             </div>
           </GlassCard>
@@ -118,12 +135,42 @@ export default function Home() {
             )}
           </GlassCard>
 
-          <GlassCard delay={0.7} className="bg-gradient-to-br from-neon-blue/10 to-neon-purple/10 border-neon-purple/20">
-            <h3 className="font-bold mb-2">Quote of the Day</h3>
-            <p className="text-sm italic text-zinc-300">
-              "The future belongs to those who learn more skills and combine them in creative ways."
-            </p>
-            <p className="text-xs text-neon-blue mt-2 font-medium">— Robert Greene</p>
+          {/* Namaz Tracker */}
+          <GlassCard delay={0.65} className="flex-1">
+            <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+              <Activity size={20} className="text-neon-green"/> Günlük Namaz Takibi
+            </h2>
+            <div className="flex justify-between items-center bg-black/30 p-4 rounded-xl border border-white/5">
+              {['sabah', 'ogle', 'ikindi', 'aksam', 'yatsi'].map((vakit) => (
+                <div key={vakit} className="flex flex-col items-center gap-2 cursor-pointer group" onClick={() => toggleNamaz && toggleNamaz(vakit)}>
+                  <span className="text-xs uppercase text-zinc-400 group-hover:text-white transition-colors">{vakit}</span>
+                  {namaz && namaz[vakit] ? (
+                    <CheckCircle2 className="text-neon-green shadow-[0_0_10px_rgba(0,255,102,0.3)] rounded-full" size={28} />
+                  ) : (
+                    <Circle className="text-zinc-600 group-hover:text-white transition-colors" size={28} />
+                  )}
+                </div>
+              ))}
+            </div>
+          </GlassCard>
+
+          {/* Daily Facts */}
+          <GlassCard delay={0.7} className="bg-gradient-to-br from-neon-green/10 to-neon-blue/10 border-neon-blue/20">
+            <h3 className="font-bold mb-2 flex items-center gap-2"><TrendingUp size={16} className="text-neon-green"/> Günün Finans Tüyosu</h3>
+            {isLoadingFacts ? (
+              <div className="animate-pulse h-12 bg-white/10 rounded-md"></div>
+            ) : (
+              <p className="text-sm italic text-zinc-300">{dailyFacts?.finance || "Bugün için bir tüyo bulunamadı."}</p>
+            )}
+          </GlassCard>
+
+          <GlassCard delay={0.8} className="bg-gradient-to-br from-orange-500/10 to-red-500/10 border-orange-500/20">
+            <h3 className="font-bold mb-2 flex items-center gap-2"><History size={16} className="text-orange-500"/> Tarihte Bugün / Bilgi</h3>
+            {isLoadingFacts ? (
+              <div className="animate-pulse h-12 bg-white/10 rounded-md"></div>
+            ) : (
+              <p className="text-sm italic text-zinc-300">{dailyFacts?.history || "Bilgi alınamadı."}</p>
+            )}
           </GlassCard>
         </div>
       </div>
