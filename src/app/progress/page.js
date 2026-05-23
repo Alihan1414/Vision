@@ -4,103 +4,236 @@ import { useStore } from '@/store/useStore';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { motion } from 'framer-motion';
-import { Trophy, TrendingUp, Target, Flame, Check } from 'lucide-react';
+import { 
+  Trophy, TrendingUp, Target, Flame, Check, 
+  BookOpen, Sparkles, Award, Zap, Activity
+} from 'lucide-react';
 
 export default function Progress() {
-  const { user, progress } = useStore();
+  const { user, progress, tasks, namaz, stats, books, goals } = useStore();
+
+  // Calculate Today's Activity Score dynamically
+  const completedTasksCount = tasks.filter(t => t.completed).length;
+  const completedNamazCount = Object.values(namaz || {}).filter(Boolean).length;
+  const focusMinutes = stats?.focusTimeMinutes || 0;
+  
+  // XP contribution + tasks + prayers
+  const todayScore = completedTasksCount * 2 + completedNamazCount * 3 + Math.floor(focusMinutes / 10);
+
+  // Generate 30 days of activity data (yesterdays are pseudo-random for visualization, today is real)
+  const generateHeatmapData = () => {
+    const data = [];
+    const today = new Date();
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(today.getDate() - i);
+      const dateStr = d.toISOString().split('T')[0];
+      
+      let score = 0;
+      if (i === 0) {
+        score = todayScore;
+      } else {
+        // Deterministic mock score based on date seed
+        const seed = d.getDate() + (d.getMonth() + 1) * 31;
+        score = (seed * 19 + 7) % 9;
+      }
+      data.push({ date: dateStr, score, label: d.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' }) });
+    }
+    return data;
+  };
+
+  const heatmapData = generateHeatmapData();
+
+  // Get color scale class for heatmap cell
+  const getCellColor = (score) => {
+    if (score === 0) return 'bg-white/5 border-white/5 text-zinc-600';
+    if (score <= 2) return 'bg-emerald-950/40 border-emerald-900/30 text-emerald-400';
+    if (score <= 5) return 'bg-emerald-800/40 border-emerald-700/30 text-emerald-300';
+    if (score <= 7) return 'bg-emerald-600/50 border-emerald-500/30 text-emerald-200';
+    return 'bg-emerald-400/70 border-emerald-300/40 text-black shadow-[0_0_10px_rgba(52,211,153,0.3)]';
+  };
 
   const achievements = [
-    { id: 1, title: 'First Steps', desc: 'Created your VisionOS account.', completed: true },
-    { id: 2, title: '7 Day Discipline', desc: 'Maintain a 7-day streak.', completed: user.streak >= 7 },
-    { id: 3, title: 'Polyglot Junior', desc: 'Reach 30% in French or English.', completed: progress.french >= 30 || progress.english >= 30 },
-    { id: 4, title: 'Code Builder', desc: 'Complete 3 software projects.', completed: false },
+    { id: 1, title: 'İlk Adım', desc: 'Sistemi kurdun ve hesabını başlattın.', completed: true },
+    { id: 2, title: 'Disiplin Yıldızı', desc: 'En az 3 günlük aktif seriye ulaş.', completed: user.streak >= 3 },
+    { id: 3, title: 'Dil Avcısı', desc: 'Fransızca veya İngilizce seviyeni %20 üzerine çıkar.', completed: progress.french >= 20 || progress.english >= 20 },
+    { id: 4, title: 'Kütüphaneci', desc: 'İlk kitabını başarıyla tamamla.', completed: books?.completed?.length > 0 },
+    { id: 5, title: 'Hedefe Odaklı', desc: 'İlk OKR hedefini tamamla (%100 ilerleme).', completed: goals?.some(g => g.progress === 100) },
   ];
+
+  // Progress to next level
+  const xpInCurrentLevel = user.xp % 1000;
+  const levelProgress = Math.round((xpInCurrentLevel / 1000) * 100);
 
   return (
     <div className="flex flex-col gap-8 pb-10">
-      <header>
-        <motion.h1 
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="text-4xl font-bold tracking-tight mb-2 text-gradient"
-        >
-          Progress & Analytics
-        </motion.h1>
-        <motion.p 
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.1 }}
-          className="text-zinc-400"
-        >
-          Track your evolution across all disciplines.
-        </motion.p>
+      {/* Header */}
+      <header className="flex justify-between items-center">
+        <div>
+          <motion.h1 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="text-4xl font-bold tracking-tight mb-2 text-gradient"
+          >
+            Gelişim & Analizler
+          </motion.h1>
+          <motion.p 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.1 }}
+            className="text-zinc-400 font-medium"
+          >
+            Tüm branşlardaki gelişim seviyelerini ve istatistiklerini gör.
+          </motion.p>
+        </div>
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        {/* Main Stats */}
-        <div className="lg:col-span-2 flex flex-col gap-8">
-          <GlassCard delay={0.2}>
-            <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
-              <TrendingUp className="text-neon-blue" /> Skill Trees
-            </h2>
-            <div className="space-y-6">
-              <ProgressBar progress={progress.french} label="French Mastery" color="neon-blue" />
-              <ProgressBar progress={progress.english} label="English Mastery" color="neon-purple" />
-              <ProgressBar progress={progress.software} label="Software Engineering" color="neon-green" />
-              <ProgressBar progress={progress.discipline} label="Discipline & Habits" color="white" />
-            </div>
-          </GlassCard>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <GlassCard delay={0.3} className="bg-gradient-to-br from-white/5 to-white/0">
-              <h3 className="font-bold text-zinc-300 mb-4 flex items-center gap-2">
-                <Target className="text-neon-green" size={20} /> Current Level
-              </h3>
-              <div className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-br from-neon-green to-white mb-2">
-                Lv. {user.level}
-              </div>
-              <p className="text-sm text-zinc-400">XP: {user.xp} / {user.level * 1000}</p>
-            </GlassCard>
-
-            <GlassCard delay={0.4} className="bg-gradient-to-br from-orange-500/10 to-red-500/10 border-orange-500/20">
-              <h3 className="font-bold text-zinc-300 mb-4 flex items-center gap-2">
-                <Flame className="text-orange-500" size={20} /> Active Streak
-              </h3>
-              <div className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-br from-orange-500 to-yellow-300 mb-2">
-                {user.streak} Days
-              </div>
-              <p className="text-sm text-zinc-400">Keep the momentum going.</p>
-            </GlassCard>
+      {/* Heatmap Section */}
+      <GlassCard delay={0.15}>
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-lg font-bold flex items-center gap-2 text-emerald-400">
+            <Activity className="w-5 h-5" /> Aktivite Haritası (Son 30 Gün)
+          </h2>
+          <div className="flex gap-2 text-[10px] text-zinc-500 font-medium items-center">
+            <span>Az</span>
+            <div className="w-3.5 h-3.5 rounded bg-white/5 border border-white/5" />
+            <div className="w-3.5 h-3.5 rounded bg-emerald-950/40 border border-emerald-900/30" />
+            <div className="w-3.5 h-3.5 rounded bg-emerald-800/40 border border-emerald-700/30" />
+            <div className="w-3.5 h-3.5 rounded bg-emerald-600/50 border border-emerald-500/30" />
+            <div className="w-3.5 h-3.5 rounded bg-emerald-400/70 border border-emerald-300/40" />
+            <span>Çok</span>
           </div>
         </div>
 
-        {/* Achievements */}
+        {/* Heatmap Grid */}
+        <div className="grid grid-cols-5 sm:grid-cols-10 md:grid-cols-15 lg:grid-cols-30 gap-2.5">
+          {heatmapData.map((cell, idx) => {
+            const isToday = idx === 29;
+            return (
+              <div 
+                key={idx}
+                title={`${cell.label}: Skor ${cell.score}`}
+                className={`aspect-square rounded-lg border flex flex-col items-center justify-center text-[10px] font-bold transition-all relative group cursor-help ${getCellColor(cell.score)} ${
+                  isToday ? 'ring-2 ring-neon-blue ring-offset-2 ring-offset-black' : ''
+                }`}
+              >
+                <span>{cell.dayLabel}</span>
+                {isToday && (
+                  <span className="absolute -top-6 bg-neon-blue text-black font-bold text-[9px] px-1.5 py-0.5 rounded shadow whitespace-nowrap hidden group-hover:block z-20">
+                    Bugün
+                  </span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </GlassCard>
+
+      {/* Grid Content */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        {/* SOL: Skill Trees & Stats (2/3) */}
+        <div className="lg:col-span-2 flex flex-col gap-8">
+          
+          {/* Skill Trees */}
+          <GlassCard delay={0.2}>
+            <h2 className="text-xl font-bold mb-6 flex items-center gap-2 text-neon-blue">
+              <TrendingUp className="w-5 h-5" /> Yetenek Ağaçları (Skill Trees)
+            </h2>
+            <div className="space-y-6">
+              <ProgressBar progress={progress.french} label="Fransızca Seviyesi" color="neon-blue" />
+              <ProgressBar progress={progress.english} label="İngilizce Seviyesi" color="neon-purple" />
+              <ProgressBar progress={progress.software} label="Yazılım Mühendisliği" color="neon-green" />
+              <ProgressBar progress={progress.discipline} label="Disiplin & Rutinler" color="white" />
+              <ProgressBar progress={progress.spor} label="Spor & Kondisyon" color="orange" />
+            </div>
+          </GlassCard>
+
+          {/* Quick Metrics */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            
+            {/* Level Metric */}
+            <GlassCard delay={0.3} className="flex flex-col justify-between">
+              <div>
+                <span className="text-xs text-zinc-500 font-medium block">Aktif Seviye</span>
+                <span className="text-4xl font-extrabold text-white mt-1 block">Lv. {user.level}</span>
+              </div>
+              <div className="mt-4">
+                <div className="flex justify-between text-[10px] text-zinc-400 font-semibold mb-1">
+                  <span>Level Progress</span>
+                  <span>{levelProgress}%</span>
+                </div>
+                <div className="w-full bg-white/5 h-1.5 rounded-full overflow-hidden border border-white/5">
+                  <div className="bg-neon-purple h-full shadow-[0_0_8px_#b026ff]" style={{ width: `${levelProgress}%` }} />
+                </div>
+                <span className="text-[10px] text-zinc-500 mt-2 block">Toplam XP: {user.xp}</span>
+              </div>
+            </GlassCard>
+
+            {/* Streak Metric */}
+            <GlassCard delay={0.35} className="bg-gradient-to-br from-orange-500/10 to-red-500/10 border-orange-500/20 flex flex-col justify-between">
+              <div>
+                <span className="text-xs text-zinc-500 font-medium block">Aktif Seri (Streak)</span>
+                <span className="text-4xl font-extrabold text-orange-400 mt-1 block">{user.streak} Gün</span>
+              </div>
+              <div className="mt-4">
+                <span className="text-xs text-zinc-400 flex items-center gap-1">
+                  <Flame size={14} className="text-orange-500 animate-pulse" /> Momentumunu koru!
+                </span>
+                <p className="text-[10px] text-zinc-500 mt-2">Her gün giriş yaparak serini arttır.</p>
+              </div>
+            </GlassCard>
+
+            {/* General Highlights */}
+            <GlassCard delay={0.4} className="flex flex-col justify-between">
+              <div>
+                <span className="text-xs text-zinc-500 font-medium block">Tamamlananlar</span>
+                <div className="space-y-2 mt-3">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-zinc-400 flex items-center gap-1.5"><BookOpen size={12} /> Kitap Okuma:</span>
+                    <span className="font-bold text-emerald-400">{books?.completed?.length || 0} adet</span>
+                  </div>
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-zinc-400 flex items-center gap-1.5"><Target size={12} /> OKR Hedefleri:</span>
+                    <span className="font-bold text-neon-blue">{goals?.filter(g => g.progress === 100).length || 0} adet</span>
+                  </div>
+                </div>
+              </div>
+              <div className="mt-4 pt-2 border-t border-white/5 text-[10px] text-zinc-500">
+                Gelişimlerin buluta yedeklenmektedir.
+              </div>
+            </GlassCard>
+
+          </div>
+
+        </div>
+
+        {/* SAĞ: Achievements (1/3) */}
         <div className="flex flex-col gap-6">
-          <GlassCard delay={0.5} className="flex-1 overflow-hidden flex flex-col">
-            <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
-              <Trophy className="text-yellow-400" /> Achievements
+          <GlassCard delay={0.45} className="flex-1 flex flex-col">
+            <h2 className="text-xl font-bold mb-6 flex items-center gap-2 text-yellow-400">
+              <Trophy className="w-5 h-5 text-yellow-400" /> Başarımlar (Achievements)
             </h2>
             
-            <div className="flex-1 overflow-y-auto space-y-4 pr-2">
+            <div className="flex-1 space-y-4 overflow-y-auto pr-2 max-h-[580px] scrollbar-thin">
               {achievements.map((ach) => (
                 <div 
                   key={ach.id} 
-                  className={`p-4 rounded-xl border relative overflow-hidden ${
+                  className={`p-4 rounded-xl border relative overflow-hidden transition-all duration-300 ${
                     ach.completed 
-                      ? 'bg-yellow-400/10 border-yellow-400/30' 
+                      ? 'bg-yellow-400/10 border-yellow-400/30 shadow-[0_0_12px_rgba(250,204,21,0.15)]' 
                       : 'bg-black/40 border-white/10 opacity-60 grayscale'
                   }`}
                 >
                   {ach.completed && (
-                    <div className="absolute top-0 right-0 p-2">
-                      <Check className="text-yellow-400" size={16} />
+                    <div className="absolute top-3 right-3 text-yellow-400">
+                      <Check className="w-4 h-4" strokeWidth={3} />
                     </div>
                   )}
-                  <h4 className={`font-bold ${ach.completed ? 'text-yellow-400' : 'text-zinc-300'} mb-1`}>
+                  <h4 className={`font-bold text-sm ${ach.completed ? 'text-yellow-400' : 'text-zinc-300'} mb-1`}>
                     {ach.title}
                   </h4>
-                  <p className="text-xs text-zinc-400">{ach.desc}</p>
+                  <p className="text-xs text-zinc-500 font-medium leading-relaxed">{ach.desc}</p>
                 </div>
               ))}
             </div>

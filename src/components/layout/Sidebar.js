@@ -14,7 +14,8 @@ import {
   ChevronLeft,
   ChevronRight,
   CloudUpload,
-  CloudDownload
+  CloudDownload,
+  BookOpen
 } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 import { cn } from '@/lib/utils';
@@ -24,6 +25,7 @@ const menuItems = [
   { path: '/daily', name: 'Daily Life', icon: CalendarDays },
   { path: '/progress', name: 'Progress', icon: TrendingUp },
   { path: '/future', name: 'Future Me', icon: Telescope },
+  { path: '/books', name: 'Books', icon: BookOpen },
   { path: '/software', name: 'Software', icon: Code2 },
   { path: '/languages', name: 'Languages', icon: Languages },
 ];
