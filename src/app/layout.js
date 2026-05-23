@@ -19,8 +19,8 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className="dark">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased flex h-screen overflow-hidden bg-black text-white`}>
+    <html lang="en" className="dark h-full">
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased flex h-full bg-black text-white`}>
         {/* Ambient background glow effects */}
         <div className="fixed top-[10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-neon-purple/20 blur-[120px] pointer-events-none z-0" />
         <div className="fixed bottom-[10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-neon-blue/20 blur-[120px] pointer-events-none z-0" />
