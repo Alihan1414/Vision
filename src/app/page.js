@@ -141,10 +141,16 @@ export default function Home() {
               <Activity size={20} className="text-neon-green"/> Günlük Namaz Takibi
             </h2>
             <div className="flex justify-between items-center bg-black/30 p-4 rounded-xl border border-white/5">
-              {['sabah', 'ogle', 'ikindi', 'aksam', 'yatsi'].map((vakit) => (
-                <div key={vakit} className="flex flex-col items-center gap-2 cursor-pointer group" onClick={() => toggleNamaz && toggleNamaz(vakit)}>
-                  <span className="text-xs uppercase text-zinc-400 group-hover:text-white transition-colors">{vakit}</span>
-                  {namaz && namaz[vakit] ? (
+              {[
+                { id: 'sabah', label: 'Sabah' },
+                { id: 'ogle', label: 'Öğle' },
+                { id: 'ikindi', label: 'İkindi' },
+                { id: 'aksam', label: 'Akşam' },
+                { id: 'yatsi', label: 'Yatsı' }
+              ].map((vakit) => (
+                <div key={vakit.id} className="flex flex-col items-center gap-2 cursor-pointer group" onClick={() => toggleNamaz && toggleNamaz(vakit.id)}>
+                  <span className="text-xs uppercase text-zinc-400 group-hover:text-white transition-colors">{vakit.label}</span>
+                  {namaz && namaz[vakit.id] ? (
                     <CheckCircle2 className="text-neon-green shadow-[0_0_10px_rgba(0,255,102,0.3)] rounded-full" size={28} />
                   ) : (
                     <Circle className="text-zinc-600 group-hover:text-white transition-colors" size={28} />
