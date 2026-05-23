@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Target, Flame, Brain, BookOpen, Clock, Activity, 
   TrendingUp, History, CheckCircle2, Circle, AlertCircle,
-  Sparkles, ShieldAlert, Lightbulb, Compass, Award
+  Sparkles, ShieldAlert, Lightbulb, Compass, Award, Moon
 } from 'lucide-react';
 
 export default function Home() {
@@ -27,6 +27,9 @@ export default function Home() {
 
   // Smart Context-Aware Alert state
   const [smartAlert, setSmartAlert] = useState(null);
+
+  // Prayer times state
+  const [prayerTimes, setPrayerTimes] = useState(null);
 
   const todayStr = new Date().toISOString().split('T')[0];
 
@@ -51,6 +54,36 @@ export default function Home() {
         setIsLoadingFacts(false);
       });
   }, [cachedDailyFacts?.date, cachedDailyFacts?.data, setDailyFacts, todayStr]);
+
+  // Fetch prayer times from Aladhan API (Diyanet method = 13, similar to Fazilet Takvimi)
+  useEffect(() => {
+    const stored = sessionStorage.getItem('prayerTimes');
+    const storedDate = sessionStorage.getItem('prayerTimesDate');
+    if (stored && storedDate === todayStr) {
+      setPrayerTimes(JSON.parse(stored));
+      return;
+    }
+    // Default city: Istanbul. Closest method to Fazilet Takvimi is Diyanet (13)
+    fetch('https://api.aladhan.com/v1/timingsByCity?city=Istanbul&country=Turkey&method=13')
+      .then(res => res.json())
+      .then(data => {
+        if (data.code === 200) {
+          const t = data.data.timings;
+          const times = {
+            sabah: t.Fajr,
+            sunrise: t.Sunrise,
+            ogle: t.Dhuhr,
+            ikindi: t.Asr,
+            aksam: t.Maghrib,
+            yatsi: t.Isha,
+          };
+          setPrayerTimes(times);
+          sessionStorage.setItem('prayerTimes', JSON.stringify(times));
+          sessionStorage.setItem('prayerTimesDate', todayStr);
+        }
+      })
+      .catch(err => console.error('Prayer times fetch failed:', err));
+  }, [todayStr]);
 
   // Compute today's values
   const todayTasks = tasks.filter(t => t.type === 'daily' || !t.type);
@@ -355,26 +388,48 @@ export default function Home() {
           {/* Namaz Tracker */}
           <GlassCard delay={0.5} className="flex-1">
             <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-              <Activity size={20} className="text-neon-green"/> Günlük Namaz Takibi
+              <Moon size={20} className="text-emerald-400"/> Günlük Namaz Takibi
             </h2>
-            <div className="flex justify-between items-center bg-black/30 p-4 rounded-xl border border-white/5">
+            <div className="space-y-2">
               {[
-                { id: 'sabah', label: 'Sabah' },
-                { id: 'ogle', label: 'Öğle' },
-                { id: 'ikindi', label: 'İkindi' },
-                { id: 'aksam', label: 'Akşam' },
-                { id: 'yatsi', label: 'Yatsı' }
+                { id: 'sabah', label: 'Sabah', timeKey: 'sabah' },
+                { id: 'ogle', label: 'Öğle', timeKey: 'ogle' },
+                { id: 'ikindi', label: 'İkindi', timeKey: 'ikindi' },
+                { id: 'aksam', label: 'Akşam', timeKey: 'aksam' },
+                { id: 'yatsi', label: 'Yatsı', timeKey: 'yatsi' }
               ].map((vakit) => (
-                <div key={vakit.id} className="flex flex-col items-center gap-2 cursor-pointer group" onClick={() => toggleNamaz && toggleNamaz(vakit.id)}>
-                  <span className="text-[10px] uppercase text-zinc-400 group-hover:text-white transition-colors">{vakit.label}</span>
-                  {namaz && namaz[vakit.id] ? (
-                    <CheckCircle2 className="text-neon-green shadow-[0_0_10px_rgba(0,255,102,0.3)] rounded-full" size={26} />
-                  ) : (
-                    <Circle className="text-zinc-600 group-hover:text-white transition-colors" size={26} />
-                  )}
+                <div
+                  key={vakit.id}
+                  className={`flex items-center justify-between px-4 py-3 rounded-xl border cursor-pointer transition-all ${
+                    namaz && namaz[vakit.id]
+                      ? 'bg-emerald-500/10 border-emerald-500/30'
+                      : 'bg-black/30 border-white/5 hover:border-white/20'
+                  }`}
+                  onClick={() => toggleNamaz && toggleNamaz(vakit.id)}
+                >
+                  <div className="flex items-center gap-3">
+                    {namaz && namaz[vakit.id] ? (
+                      <CheckCircle2 className="text-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.4)]" size={22} />
+                    ) : (
+                      <Circle className="text-zinc-600" size={22} />
+                    )}
+                    <span className={`font-semibold text-sm ${
+                      namaz && namaz[vakit.id] ? 'text-emerald-300' : 'text-zinc-200'
+                    }`}>{vakit.label}</span>
+                  </div>
+                  <span className="text-xs font-mono font-bold text-zinc-400">
+                    {prayerTimes ? prayerTimes[vakit.timeKey] : '– –:– –'}
+                  </span>
                 </div>
               ))}
             </div>
+            {/* Güneş doğuşu */}
+            {prayerTimes?.sunrise && (
+              <p className="text-[11px] text-zinc-500 mt-3 text-center">
+                🌅 Güneş Doğuşu: <span className="text-zinc-400 font-mono">{prayerTimes.sunrise}</span>
+                <span className="ml-2 text-zinc-600">· Fazilet Takvimi (Diyanet) — İstanbul</span>
+              </p>
+            )}
             {completedNamazCount > 0 && (
               <div className="mt-4">
                 <div className="flex justify-between text-[10px] font-bold text-zinc-500 mb-1">
@@ -382,7 +437,7 @@ export default function Home() {
                   <span>{namazPercent}%</span>
                 </div>
                 <div className="w-full bg-white/5 h-1 rounded-full overflow-hidden border border-white/5">
-                  <div className="bg-neon-green h-full" style={{ width: `${namazPercent}%` }} />
+                  <div className="bg-emerald-400 h-full" style={{ width: `${namazPercent}%` }} />
                 </div>
               </div>
             )}

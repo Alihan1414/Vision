@@ -15,7 +15,8 @@ import {
   ChevronRight,
   CloudUpload,
   CloudDownload,
-  BookOpen
+  BookOpen,
+  Dumbbell
 } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 import { cn } from '@/lib/utils';
@@ -28,6 +29,7 @@ const menuItems = [
   { path: '/books', name: 'Books', icon: BookOpen },
   { path: '/software', name: 'Software', icon: Code2 },
   { path: '/languages', name: 'Languages', icon: Languages },
+  { path: '/spor', name: 'Spor', icon: Dumbbell },
 ];
 
 export function Sidebar() {
