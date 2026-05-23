@@ -27,7 +27,7 @@ export default function Software() {
             .map(event => ({
               id: event.id,
               repo: event.repo.name.split('/')[1],
-              message: event.payload.commits[0]?.message || 'No commit message',
+              message: event.payload?.commits?.[0]?.message || 'No commit message',
               date: new Date(event.created_at).toLocaleDateString()
             }));
           setGithubActivity(pushes);
