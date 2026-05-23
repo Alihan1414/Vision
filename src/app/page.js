@@ -14,10 +14,11 @@ import {
 export default function Home() {
   const { 
     user, progress, tasks, stats, namaz, toggleNamaz,
-    waterIntake, sleep, finance, books, goals 
+    waterIntake, sleep, finance, books, goals,
+    dailyFacts: cachedDailyFacts, setDailyFacts
   } = useStore();
 
-  const [dailyFacts, setDailyFacts] = useState({ finance: '', history: '' });
+  const [localDailyFacts, setLocalDailyFacts] = useState({ finance: '', history: '' });
   const [isLoadingFacts, setIsLoadingFacts] = useState(true);
 
   // AI Weekly Report State
@@ -27,19 +28,29 @@ export default function Home() {
   // Smart Context-Aware Alert state
   const [smartAlert, setSmartAlert] = useState(null);
 
+  const todayStr = new Date().toISOString().split('T')[0];
+
   useEffect(() => {
-    // Fetch daily facts from API
+    // If facts are already cached for today, use them
+    if (cachedDailyFacts?.date === todayStr && cachedDailyFacts?.data) {
+      setLocalDailyFacts(cachedDailyFacts.data);
+      setIsLoadingFacts(false);
+      return;
+    }
+
+    // Otherwise, fetch new facts from API
     fetch('/api/daily-facts')
       .then(res => res.json())
       .then(data => {
-        setDailyFacts(data);
+        setLocalDailyFacts(data);
+        setDailyFacts(todayStr, data); // Save to cache
         setIsLoadingFacts(false);
       })
       .catch(err => {
         console.error(err);
         setIsLoadingFacts(false);
       });
-  }, []);
+  }, [cachedDailyFacts?.date, cachedDailyFacts?.data, setDailyFacts, todayStr]);
 
   // Compute today's values
   const todayTasks = tasks.filter(t => t.type === 'daily' || !t.type);
@@ -50,7 +61,6 @@ export default function Home() {
   const completedNamazCount = Object.values(namaz || {}).filter(Boolean).length;
   const namazPercent = Math.round((completedNamazCount / 5) * 100);
 
-  const todayStr = new Date().toISOString().split('T')[0];
   const todayTransactions = finance?.transactions?.filter(t => t.date === todayStr) || [];
   const todayTotalExpense = todayTransactions.reduce((acc, t) => acc + Number(t.amount), 0);
 
@@ -384,7 +394,7 @@ export default function Home() {
             {isLoadingFacts ? (
               <div className="animate-pulse h-12 bg-white/10 rounded-md"></div>
             ) : (
-              <p className="text-xs italic text-zinc-300 leading-relaxed">{dailyFacts?.finance || "Bugün için bir tüyo bulunamadı."}</p>
+              <p className="text-xs italic text-zinc-300 leading-relaxed">{localDailyFacts?.finance || "Bugün için bir tüyo bulunamadı."}</p>
             )}
           </GlassCard>
 
@@ -393,7 +403,7 @@ export default function Home() {
             {isLoadingFacts ? (
               <div className="animate-pulse h-12 bg-white/10 rounded-md"></div>
             ) : (
-              <p className="text-xs italic text-zinc-300 leading-relaxed">{dailyFacts?.history || "Bilgi alınamadı."}</p>
+              <p className="text-xs italic text-zinc-300 leading-relaxed">{localDailyFacts?.history || "Bilgi alınamadı."}</p>
             )}
           </GlassCard>
         </div>

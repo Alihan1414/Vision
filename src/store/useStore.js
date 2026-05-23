@@ -96,6 +96,12 @@ export const useStore = create(
         items: [],
       },
 
+      // Daily Facts Cache
+      dailyFacts: {
+        date: '',
+        data: null,
+      },
+
       // Actions
       addVocabulary: (type, words) => set((state) => {
         if (!words || words.length === 0) return state;
@@ -357,6 +363,8 @@ export const useStore = create(
         }
       })),
 
+      setDailyFacts: (date, data) => set({ dailyFacts: { date, data } }),
+
       // --- CLOUD SYNC ACTIONS ---
       syncToCloud: async () => {
         try {
@@ -376,7 +384,7 @@ export const useStore = create(
             // Only restore plain data fields, not functions
             const { 
               user, tasks, progress, stats, langLevels, vocabularyHistory, projects, goals, namaz,
-              waterIntake, sleep, finance, books, visionBoard
+              waterIntake, sleep, finance, books, visionBoard, dailyFacts
             } = result.data;
             useStore.setState({ 
               user, 
@@ -392,7 +400,8 @@ export const useStore = create(
               sleep: sleep || { bedtime: '', wakeTime: '', quality: 'medium' },
               finance: finance || { transactions: [], budget: 0, currency: 'TRY' },
               books: books || { current: { title: '', page: 0, totalPages: 0 }, completed: [] },
-              visionBoard: visionBoard || { items: [] }
+              visionBoard: visionBoard || { items: [] },
+              dailyFacts: dailyFacts || { date: '', data: null }
             });
           }
           return result;
