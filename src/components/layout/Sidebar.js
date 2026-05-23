@@ -74,7 +74,7 @@ export function Sidebar() {
               V
             </div>
             <span className="text-xl font-bold tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-white to-zinc-400">
-              VISION<span className="text-neon-blue">OS</span>
+              ALIHAN<span className="text-neon-blue">VS</span>
             </span>
           </div>
         )}

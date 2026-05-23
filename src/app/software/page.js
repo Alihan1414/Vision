@@ -41,7 +41,7 @@ export default function Software() {
   }, []);
 
   const projects = [
-    { id: 1, name: 'VisionOS Dashboard', desc: 'Personal development tracking system built with Next.js and Tailwind.', status: 'Active', tech: ['Next.js', 'Tailwind', 'Zustand'] },
+    { id: 1, name: 'AlihanVS Dashboard', desc: 'Personal development tracking system built with Next.js and Tailwind.', status: 'Active', tech: ['Next.js', 'Tailwind', 'Zustand'] },
     { id: 2, type: 'Learning', name: 'Python Data Science', desc: 'Learning data structures, Pandas, and basic ML algorithms.', status: 'Learning', tech: ['Python', 'Pandas'] },
     { id: 3, name: 'Portfolio Website', desc: 'Minimalist developer portfolio.', status: 'Planned', tech: ['React', 'Framer Motion'] },
   ];

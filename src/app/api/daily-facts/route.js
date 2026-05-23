@@ -16,8 +16,7 @@ export async function GET() {
       Sen çok bilgili, ufuk açan bir yaşam koçu ve bilge birisin. Kullanıcının ufkunu genişletmek istiyorsun.
       Bana aşağıdaki JSON formatında 2 şey ver:
       1. Bugün için ufuk açıcı, vizyon katan, akıllıca bir Finans/Ekonomi/Yatırım tüyosu.
-      2. Tarihte yaşanmış çok ilginç, şaşırtıcı ve az bilinen bir olay/bilgi.
-      
+      - history: Bugün tarihte yaşanmış ilham verici, şaşırtıcı veya ufuk açıcı bir olay. (2 cümlelik kısa bir özet). Altında mutlaka "Kaynak: [Kaynağın Adı (örn: Wikipedia)]" şeklinde kaynağı da belirt.    
       Yanıtı YALNIZCA RAW JSON olarak döndür. Markdown, \`\`\`json vs kullanma.
       Format:
       {

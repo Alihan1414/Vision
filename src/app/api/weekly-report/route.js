@@ -13,7 +13,7 @@ export async function POST(req) {
     const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
     const prompt = `
-      Sen çok bilgili, ufuk açan bir yapay zeka gelişim koçusun (VisionOS platformu için). 
+      Sen çok bilgili, ufuk açan bir yapay zeka gelişim koçusun (AlihanVS platformu için). 
       Kullanıcının son haftalık verilerine bakarak ona özel analizler sunacaksın.
       Kullanıcı verileri:
       ${JSON.stringify(userData, null, 2)}
