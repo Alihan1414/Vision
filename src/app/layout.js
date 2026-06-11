@@ -15,6 +15,8 @@ const geistMono = Geist_Mono({
 export const metadata = {
   title: "AlihanVS | Personal Development",
   description: "Futuristic personal development dashboard",
+  manifest: "/manifest.json",
+  themeColor: "#09090b",
 };
 
 export default function RootLayout({ children }) {
