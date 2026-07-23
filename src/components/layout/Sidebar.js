@@ -16,7 +16,7 @@ import {
   CloudUpload,
   CloudDownload,
   BookOpen,
-  Dumbbell
+  Dumbbell,
 } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 import { cn } from '@/lib/utils';
